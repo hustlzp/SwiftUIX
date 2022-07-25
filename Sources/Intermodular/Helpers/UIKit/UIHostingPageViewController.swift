@@ -31,6 +31,10 @@ class UIHostingPageViewController<Page: View>: UIPageViewController, _opaque_UIH
         }
     }
     var paginationState: Binding<PaginationState>?
+    var autoScrollEnabled = false
+    var autoScrollInterval: TimeInterval = 3
+    private var autoScrollTimer: Timer?
+    var currentPageIndexBinding: Binding<Int>?
     
     var content: AnyForEach<Page>? {
         didSet {
@@ -124,8 +128,27 @@ class UIHostingPageViewController<Page: View>: UIPageViewController, _opaque_UIH
         guard let currentPageIndex = currentPageIndex else {
             return nil
         }
-        
+
+        if let content = content,
+           let currentPageIndexOffset = currentPageIndexOffset,
+           currentPageIndexOffset + 1 >= content.count,
+           autoScrollEnabled {
+            return content.data.startIndex
+        }
+
         return content?.data.index(after: currentPageIndex)
+    }
+
+    var nextPageIndexOffset: Int? {
+        guard let content = content else {
+            return nil
+        }
+
+        guard let nextPageIndex = nextPageIndex else {
+            return nil
+        }
+
+        return content.data.distance(from: content.data.startIndex, to: nextPageIndex)
     }
     
     private func preheatViewControllersCache() {
@@ -149,6 +172,8 @@ class UIHostingPageViewController<Page: View>: UIPageViewController, _opaque_UIH
                 scrollView.delegate = self
             }
         }
+
+        startAutoScrollTimerIfNeeded()
     }
     
     public func scrollViewDidScroll(_ scrollView: UIScrollView) {
@@ -169,6 +194,57 @@ class UIHostingPageViewController<Page: View>: UIPageViewController, _opaque_UIH
         }
         
         internalPaginationState.activePageTransitionProgress = abs(Double(activePageTransitionProgress))
+    }
+
+    private func startAutoScrollTimerIfNeeded() {
+        autoScrollTimer?.invalidate()
+        autoScrollTimer = nil
+        if autoScrollEnabled {
+            autoScrollTimer = Timer.scheduledTimer(withTimeInterval: autoScrollInterval, repeats: true, block: { [weak self] timer in
+                guard let self = self else {
+                    timer.invalidate()
+                    return
+                }
+
+                self.loadNextViewController()
+            })
+        }
+    }
+
+    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+        autoScrollTimer?.invalidate()
+        autoScrollTimer = nil
+    }
+
+    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+        startAutoScrollTimerIfNeeded()
+    }
+
+    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        if (!decelerate) {
+            startAutoScrollTimerIfNeeded()
+        }
+    }
+
+    @objc private func loadNextViewController() {
+        guard
+            let nextPageIndex = nextPageIndex,
+            let nextPageIndexOffset = nextPageIndexOffset,
+            let controller = viewController(for: nextPageIndex) else {
+            return
+        }
+
+        setViewControllers([controller], direction: .forward, animated: true) { finished in
+            guard finished else {
+                return
+            }
+
+            self.currentPageIndexBinding?.wrappedValue = nextPageIndexOffset
+        }
+    }
+
+    deinit {
+        autoScrollTimer?.invalidate()
     }
 }
 

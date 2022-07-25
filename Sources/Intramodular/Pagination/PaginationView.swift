@@ -32,6 +32,10 @@ public struct PaginationView<Page: View>: View {
     let transitionStyle: UIPageViewController.TransitionStyle
     @usableFromInline
     let showsIndicators: Bool
+    @usableFromInline
+    var autoScrollEnabled: Bool = false
+    @usableFromInline
+    var autoScrollInterval: TimeInterval?
     
     @usableFromInline
     var pageIndicatorAlignment: Alignment
@@ -55,18 +59,23 @@ public struct PaginationView<Page: View>: View {
     @DelayedState public var _progressionController: ProgressionController?
     
     var paginationState: Binding<PaginationState>?
+
         
     @inlinable
     public init(
         content: AnyForEach<Page>,
         axis: Axis = .horizontal,
         transitionStyle: UIPageViewController.TransitionStyle = .scroll,
-        showsIndicators: Bool = true
+        showsIndicators: Bool = true,
+        autoScrollEnabled: Bool = false,
+        autoScrollInterval: TimeInterval? = nil
     ) {
         self.content = content
         self.axis = axis
         self.transitionStyle = transitionStyle
         self.showsIndicators = showsIndicators
+        self.autoScrollEnabled = autoScrollEnabled
+        self.autoScrollInterval = autoScrollInterval
         
         switch axis {
             case .horizontal:
@@ -106,7 +115,9 @@ public struct PaginationView<Page: View>: View {
                         interPageSpacing: interPageSpacing,
                         cyclesPages: cyclesPages,
                         initialPageIndex: initialPageIndex,
-                        paginationState: paginationState
+                        paginationState: paginationState,
+                        autoScrollEnabled: autoScrollEnabled,
+                        autoScrollInterval: autoScrollInterval
                     ),
                     currentPageIndex: currentPageIndex ?? $_currentPageIndex,
                     progressionController: $_progressionController
@@ -153,13 +164,17 @@ extension PaginationView {
         axis: Axis = .horizontal,
         transitionStyle: UIPageViewController.TransitionStyle = .scroll,
         showsIndicators: Bool = true,
+        autoScrollEnabled: Bool = false,
+        autoScrollInterval: TimeInterval? = nil,
         content: () -> ForEach<Data, ID, Page>
     ) {
         self.init(
             content: .init(content()),
             axis: axis,
             transitionStyle: transitionStyle,
-            showsIndicators: showsIndicators
+            showsIndicators: showsIndicators,
+            autoScrollEnabled: autoScrollEnabled,
+            autoScrollInterval: autoScrollInterval
         )
     }
     
@@ -168,13 +183,17 @@ extension PaginationView {
         axis: Axis = .horizontal,
         transitionStyle: UIPageViewController.TransitionStyle = .scroll,
         showsIndicators: Bool = true,
+        autoScrollEnabled: Bool = false,
+        autoScrollInterval: TimeInterval? = nil,
         content: () -> ForEach<Data, ID, Page>
     ) where Data.Element: Identifiable {
         self.init(
             content: .init(content()),
             axis: axis,
             transitionStyle: transitionStyle,
-            showsIndicators: showsIndicators
+            showsIndicators: showsIndicators,
+            autoScrollEnabled: autoScrollEnabled,
+            autoScrollInterval: autoScrollInterval
         )
     }
 }

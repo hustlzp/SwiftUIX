@@ -21,6 +21,8 @@ struct _PaginationView<Page: View> {
         let cyclesPages: Bool
         let initialPageIndex: Int?
         let paginationState: Binding<PaginationState>?
+        let autoScrollEnabled: Bool
+        let autoScrollInterval: TimeInterval?
     }
     
     let configuration: Configuration
@@ -59,7 +61,13 @@ extension _PaginationView: UIViewControllerRepresentable {
         
         uiViewController.paginationState = configuration.paginationState
         uiViewController.content = content
-        
+        uiViewController.currentPageIndexBinding = $currentPageIndex
+
+        uiViewController.autoScrollEnabled = configuration.autoScrollEnabled
+        if let autoScrollInterval = configuration.autoScrollInterval {
+            uiViewController.autoScrollInterval = autoScrollInterval
+        }
+
         uiViewController.dataSource = .some(context.coordinator as! UIPageViewControllerDataSource)
         uiViewController.delegate = .some(context.coordinator as! UIPageViewControllerDelegate)
         
