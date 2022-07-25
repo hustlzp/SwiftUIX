@@ -43,6 +43,7 @@ public struct PaginationView<Page: View>: View {
     var initialPageIndex: Int?
     @usableFromInline
     var currentPageIndex: Binding<Int>?
+    var pageIndicatorBottomPadding: CGFloat = 0
     
     /// The current page index internally used by `PaginationView`.
     /// Never access this directly, it is marked public as a workaround to a compiler bug.
@@ -119,7 +120,7 @@ public struct PaginationView<Page: View>: View {
                         axis == .vertical
                             ? .init(degrees: 90)
                             : .init(degrees: 0)
-                    )
+                    ).padding(.bottom, pageIndicatorBottomPadding)
                 }
             }
             .environment(\.progressionController, _progressionController)
@@ -433,6 +434,10 @@ extension PaginationView {
     @inlinable
     public func pageIndicatorAlignment(_ alignment: Alignment) -> Self {
         then({ $0.pageIndicatorAlignment = alignment })
+    }
+
+    public func pageIndicatorBottomPadding(_ bottomPadding: CGFloat) -> Self {
+        then({ $0.pageIndicatorBottomPadding = bottomPadding })
     }
     
     @inlinable
